@@ -8,7 +8,7 @@ import {
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Html, Line, OrbitControls, useGLTF } from "@react-three/drei";
-import { MOUSE, Vector3, type Mesh } from "three";
+import { MOUSE, Shape, Vector3, type Mesh } from "three";
 import type { OrbitControls as OrbitControlsType } from "three-stdlib";
 import {
   Plus,
@@ -34,6 +34,53 @@ import { buildings } from "../data/buildings";
 import { nodes } from "../data/nodes";
 import { useApp } from "../store";
 import type { Building, Point } from "../types";
+// A running track is a "stadium" shape — two straight sides joined by
+// semicircular ends — not a smooth ellipse. `halfStraight` is half the
+// length of each straight side, `radius` is the semicircle radius (i.e.
+// half the track's short-axis width).
+function stadiumTrackPoints(
+  halfStraight: number,
+  radius: number,
+  y: number,
+  segmentsPerArc = 16,
+): Point[] {
+  const pts: Point[] = [];
+  pts.push([-halfStraight, y, radius]);
+  pts.push([halfStraight, y, radius]);
+  for (let i = 1; i < segmentsPerArc; i++) {
+    const t = Math.PI / 2 - (Math.PI * i) / segmentsPerArc;
+    pts.push([
+      halfStraight + radius * Math.cos(t),
+      y,
+      radius * Math.sin(t),
+    ]);
+  }
+  pts.push([halfStraight, y, -radius]);
+  pts.push([-halfStraight, y, -radius]);
+  for (let i = 1; i < segmentsPerArc; i++) {
+    const t = -Math.PI / 2 - (Math.PI * i) / segmentsPerArc;
+    pts.push([
+      -halfStraight + radius * Math.cos(t),
+      y,
+      radius * Math.sin(t),
+    ]);
+  }
+  pts.push([-halfStraight, y, radius]);
+  return pts;
+}
+// Same stadium outline as stadiumTrackPoints, but as a filled Shape — used
+// for the infield so its rounded ends stay inside the track ring instead of
+// a rectangle's corners poking past it (see CampusPlan.tsx's matching
+// rounded-rect infield, which the 3D version is meant to mirror).
+function stadiumShape(halfStraight: number, radius: number): Shape {
+  const shape = new Shape();
+  shape.moveTo(-halfStraight, radius);
+  shape.lineTo(halfStraight, radius);
+  shape.absarc(halfStraight, 0, radius, Math.PI / 2, -Math.PI / 2, true);
+  shape.lineTo(-halfStraight, -radius);
+  shape.absarc(-halfStraight, 0, radius, -Math.PI / 2, Math.PI / 2, true);
+  return shape;
+}
 function Block({
   position,
   size,
@@ -396,24 +443,20 @@ function Scene({ command }: { command: { kind: string; id: number } }) {
         />
       ))}
       <group position={[-440, 0.5, 65]} rotation={[0, -0.23, 0]}>
-        <mesh rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[155, 92]} />
-          <meshStandardMaterial color="#b2c49a" />
-        </mesh>
+        {/* worldUnits: without it, lineWidth is CSS pixels and stays a fixed
+            screen size regardless of zoom — at any other distance than the
+            one this was tuned at, the ring stops matching the field's real
+            (world-unit) size. worldUnits makes it scale like real geometry. */}
         <Line
-          points={Array.from(
-            { length: 65 },
-            (_, i) =>
-              [
-                Math.cos((i * Math.PI) / 32) * 89,
-                0.3,
-                Math.sin((i * Math.PI) / 32) * 58,
-              ] as Point,
-          )}
+          points={stadiumTrackPoints(89 - 58, 58, 0.3)}
           color="#cc9a85"
-          lineWidth={12}
+          lineWidth={15}
+          worldUnits
         />
-        <Block position={[0, 0.4, 0]} size={[102, 0.1, 55]} color="#b4c69f" />
+        <mesh position={[0, 0.4, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <shapeGeometry args={[stadiumShape(31, 54)]} />
+          <meshStandardMaterial color="#b4c69f" />
+        </mesh>
         <Line
           points={[
             [-51, 0.6, -27],
@@ -423,7 +466,8 @@ function Scene({ command }: { command: { kind: string; id: number } }) {
             [-51, 0.6, -27],
           ]}
           color="#f4f3dc"
-          lineWidth={1}
+          lineWidth={0.4}
+          worldUnits
         />
         <Line
           points={[
@@ -431,7 +475,8 @@ function Scene({ command }: { command: { kind: string; id: number } }) {
             [0, 0.6, 27],
           ]}
           color="#f4f3dc"
-          lineWidth={1}
+          lineWidth={0.4}
+          worldUnits
         />
       </group>
       {trees.map((p, i) => (

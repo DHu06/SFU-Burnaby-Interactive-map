@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * SFU-inspired palette: red, white, charcoal, light grey.
+ * Exposed as CSS variables so both Tailwind utilities (via @theme)
+ * and raw Three.js materials can read the same source of truth.
+ */
+@theme {
+  --color-sfu-red: #a6192e;
+  --color-sfu-red-dark: #7c1322;
+  --color-charcoal: #1f2023;
+  --color-charcoal-light: #2c2d31;
+  --color-light-grey: #f4f4f5;
+  --color-mid-grey: #d4d4d8;
+
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-light-grey text-charcoal dark:bg-charcoal dark:text-light-grey;
+  font-family: var(--font-sans);
+}
+
+/* Visible focus rings everywhere for keyboard accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-sfu-red);
+  outline-offset: 2px;
+}
