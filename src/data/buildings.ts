@@ -1,0 +1,57 @@
+import type { Building } from "../types";
+export const provenance = {
+  source: "Illustrative demonstration data — not verified SFU geography",
+  lastUpdated: "2026-09-15",
+};
+export const buildings: Building[] = [
+  {
+    id: "AQ",
+    name: "Academic Quadrangle",
+    short: "AQ",
+    position: [-24, 0, -12],
+    size: [45, 9, 39],
+    floors: [1, 2, 3],
+    navigable: true,
+    ...provenance,
+  },
+  {
+    id: "ASB",
+    name: "Applied Sciences Building",
+    short: "ASB",
+    position: [34, 0, 13],
+    size: [34, 12, 24],
+    floors: [1, 2, 3],
+    navigable: true,
+    ...provenance,
+  },
+  {
+    id: "LIB",
+    name: "W.A.C. Bennett Library",
+    short: "Library",
+    position: [-66, 0, 3],
+    size: [23, 15, 29],
+    floors: [],
+    navigable: false,
+    ...provenance,
+  },
+  {
+    id: "SUB",
+    name: "Student Union Building",
+    short: "Student Union",
+    position: [-24, 0, 44],
+    size: [29, 9, 17],
+    floors: [],
+    navigable: false,
+    ...provenance,
+  },
+  {
+    id: "SCI",
+    name: "Science complex",
+    short: "Science complex",
+    position: [30, 0, -37],
+    size: [43, 8, 18],
+    floors: [],
+    navigable: false,
+    ...provenance,
+  },
+];
