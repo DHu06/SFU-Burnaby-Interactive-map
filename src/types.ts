@@ -39,6 +39,8 @@ export interface Building extends Provenance {
   floors: number[];
   navigable: boolean;
   modelUrl?: string;
+  footprints: import("./data/geography").Footprint[];
+  heightEstimated: boolean;
 }
 export interface Route {
   nodes: NavNode[];

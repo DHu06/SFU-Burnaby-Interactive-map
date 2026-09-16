@@ -99,3 +99,47 @@ test("automatically falls back when WebGL is unavailable", async ({ page }) => {
   await page.getByRole("button", { name: "Find my route" }).click();
   await expect(page.getByText("YOUR ROUTE IS READY")).toBeVisible();
 });
+
+test("GIS campus supports top-down and a zoomable plan", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Top down", exact: true }).click();
+  await expect(page.locator(".map")).toHaveAttribute("data-view", "top");
+  await page.waitForTimeout(1400);
+  await page.screenshot({ path: "/tmp/sfu-remodel-top.png" });
+  await page.getByRole("button", { name: "2D map", exact: true }).click();
+  const svg = page.getByRole("img", { name: "2D demonstration campus map" });
+  const before = await svg.getAttribute("viewBox");
+  await page.getByRole("button", { name: "Zoom in", exact: true }).click();
+  await expect(svg).not.toHaveAttribute("viewBox", before!);
+  await expect(
+    page.getByRole("button", {
+      name: "Explore Robert C. Brown Hall",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page.screenshot({ path: "/tmp/sfu-remodel-plan.png" });
+});
+test("Google view changes map type and links to outdoor directions", async ({
+  page,
+}) => {
+  await page.route("https://maps.google.com/maps?**", (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: "<html><body>Google embed test fixture</body></html>",
+    }),
+  );
+  await page.goto("/");
+  await page.getByRole("button", { name: "Google Maps", exact: true }).click();
+  const iframe = page.locator(
+    'iframe[title="Google Maps — SFU Burnaby campus"]',
+  );
+  await expect(iframe).toHaveAttribute("src", /t=k/);
+  await page.getByRole("button", { name: "Map", exact: true }).click();
+  await expect(iframe).toHaveAttribute("src", /t=m/);
+  await expect(
+    page.getByRole("link", { name: "Outdoor directions in Google Maps" }),
+  ).toHaveAttribute("href", /travelmode=walking/);
+  await expect(page.locator(".map-top")).not.toBeVisible();
+  await page.getByRole("button", { name: "3D view", exact: true }).click();
+  await expect(iframe).toHaveCount(0);
+});

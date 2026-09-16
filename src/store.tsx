@@ -7,6 +7,7 @@ import {
 } from "react";
 import type { Point, Route } from "./types";
 function useAppState() {
+  const [mapView, setMapView] = useState<"3d" | "top" | "2d" | "google">("3d");
   const [start, setStart] = useState("aq201"),
     [end, setEnd] = useState("asb101"),
     [accessible, setAccessible] = useState(false);
@@ -22,6 +23,8 @@ function useAppState() {
     setStep(0);
   }, [start, end, accessible]);
   return {
+    mapView,
+    setMapView,
     start,
     setStart,
     end,

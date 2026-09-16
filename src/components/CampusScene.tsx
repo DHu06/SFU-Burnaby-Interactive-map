@@ -8,7 +8,7 @@ import {
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Html, Line, OrbitControls, useGLTF } from "@react-three/drei";
-import { Vector3, type Mesh } from "three";
+import { MOUSE, Vector3, type Mesh } from "three";
 import type { OrbitControls as OrbitControlsType } from "three-stdlib";
 import {
   Plus,
@@ -25,15 +25,15 @@ import {
   ArrowUpDown,
   Footprints,
 } from "lucide-react";
+import FootprintMesh from "./FootprintMesh";
+import CampusPlan from "./CampusPlan";
+import GoogleCampusMap from "./GoogleCampusMap";
+import { campusGeometry, type Footprint } from "../data/geography";
+import { trees, landscapeLabels } from "../data/landscape";
 import { buildings } from "../data/buildings";
 import { nodes } from "../data/nodes";
 import { useApp } from "../store";
 import type { Building, Point } from "../types";
-const trees: Point[] = Array.from({ length: 92 }, (_, i) => {
-  const a = i * 2.399;
-  const r = 66 + (i % 9) * 3.4;
-  return [Math.cos(a) * r, 0, Math.sin(a) * r * 0.78];
-});
 function Block({
   position,
   size,
@@ -63,125 +63,87 @@ export function BuildingModel({ url }: { url: string }) {
 function BuildingMesh({ building: b }: { building: Building }) {
   const s = useApp(),
     selected = s.selected === b.id,
-    fade = !!s.selected && !selected,
-    alpha = fade ? 0.28 : 1;
-  const parts =
-    b.id === "AQ"
-      ? [
-          [0, 0, -16, 45, 8],
-          [0, 0, 16, 45, 7],
-          [-19, 0, 0, 7, 26],
-          [19, 0, 0, 7, 26],
-        ]
-      : [[0, 0, 0, b.size[0], b.size[2]]];
+    fade = !!s.selected && !selected;
+  const minor = ![
+    "AQ",
+    "ASB",
+    "LIB",
+    "WMC",
+    "MBC",
+    "SUB",
+    "LDC",
+    "RCB",
+    "EDB",
+    "SWH",
+    "BLU",
+    "SH",
+    "SSB",
+    "TASC1",
+    "TASC2",
+    "SCC",
+    "SCB",
+    "SCP",
+    "SCK",
+    "DAC",
+  ].includes(b.id);
   return (
     <group
-      position={b.position}
       onClick={(e) => {
         e.stopPropagation();
         s.setSelected(b.id);
         s.setFloor(1);
-        s.setFocus(b.position);
+        s.setFocus([...b.position]);
       }}
     >
       {selected && b.navigable ? (
-        <IndoorBuilding building={b} />
+        <group position={b.position}>
+          <IndoorBuilding building={b} />
+        </group>
       ) : b.modelUrl ? (
-        <Suspense fallback={null}>
-          <BuildingModel url={b.modelUrl} />
-        </Suspense>
+        <group position={b.position}>
+          <Suspense fallback={null}>
+            <BuildingModel url={b.modelUrl} />
+          </Suspense>
+        </group>
       ) : (
-        parts.map(([x, , z, w, d], i) => (
-          <group key={i}>
-            <Block
-              position={[x, 0.5, z]}
-              size={[w + 1.2, 1, d + 1.2]}
-              color="#c7c5b8"
-              opacity={alpha}
-            />
-            <Block
-              position={[x, b.size[1] / 2, z]}
-              size={[w, b.size[1], d]}
-              color={selected ? "#c3b8a0" : "#d1ccbe"}
-              opacity={alpha}
-            />
-            {[2.3, 5.3, 8.3, 11.3]
-              .filter((y) => y < b.size[1])
-              .map((y) => (
-                <group key={y}>
-                  <Block
-                    position={[x, y, z + d / 2 + 0.03]}
-                    size={[w - 0.8, 1.2, 0.1]}
-                    color="#858e85"
-                    opacity={alpha}
-                  />
-                  <Block
-                    position={[x - w / 2 - 0.03, y, z]}
-                    size={[0.1, 1.2, d - 0.8]}
-                    color="#9a9e90"
-                    opacity={alpha}
-                  />
-                  <Block
-                    position={[x + w / 2 + 0.03, y, z]}
-                    size={[0.1, 1.2, d - 0.8]}
-                    color="#9a9e90"
-                    opacity={alpha}
-                  />
-                </group>
-              ))}
-            <Block
-              position={[x, b.size[1] + 0.15, z]}
-              size={[w + 0.8, 0.5, d + 0.8]}
-              color="#ece8dc"
-              opacity={alpha}
-            />
-            <Block
-              position={[x, b.size[1] + 0.5, z]}
-              size={[w - 2, 0.5, d - 2]}
-              color="#c9c9bc"
-              opacity={alpha}
-            />
-            <Block
-              position={[x + 2, b.size[1] + 1, z]}
-              size={[Math.min(w / 3, 8), 1.1, Math.min(d / 2, 5)]}
-              color="#b7bbae"
-              opacity={alpha}
-            />
-            {Array.from({ length: Math.floor(w / 3) }, (_, k) => (
-              <Block
-                key={k}
-                position={[
-                  x - w / 2 + 1.5 + k * 3,
-                  b.size[1] / 2,
-                  z + d / 2 + 0.12,
-                ]}
-                size={[0.35, b.size[1], 0.35]}
-                color="#ddd8c9"
-                opacity={alpha}
-              />
-            ))}
-          </group>
-        ))
+        <FootprintMesh
+          polygons={b.footprints}
+          height={b.size[1]}
+          color={
+            selected
+              ? "#c77e7e"
+              : b.id === "AQ"
+                ? "#ded7c4"
+                : b.navigable
+                  ? "#c5d1c9"
+                  : "#d2d6ce"
+          }
+          wallColor={selected ? "#aa5b62" : "#a6afa6"}
+          opacity={fade ? 0.22 : 1}
+          outline={!fade}
+        />
       )}
-      <Html
-        position={[0, b.size[1] + 6, selected ? -b.size[2] / 2 : 0]}
-        center
-        zIndexRange={[8, 0]}
-      >
-        <button
-          className={`building-label ${selected ? "selected" : ""}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            s.setSelected(b.id);
-            s.setFloor(1);
-            s.setFocus(b.position);
-          }}
+      {(!minor || selected) && (
+        <Html
+          position={[b.position[0], b.size[1] + 8, b.position[2]]}
+          center
+          zIndexRange={[8, 0]}
         >
-          <span style={{ color: selected ? "#fff" : "#a3474c" }}>▦</span>
-          {b.name}
-          {!b.navigable && <small>context</small>}
-        </button>
-      </Html>
+          <button
+            className={`building-label ${selected ? "selected" : ""}`}
+            title={b.name}
+            onClick={(e) => {
+              e.stopPropagation();
+              s.setSelected(b.id);
+              s.setFloor(1);
+              s.setFocus([...b.position]);
+            }}
+          >
+            <span style={{ color: selected ? "white" : "#a3474c" }}>▦</span>
+            {["AQ", "ASB", "LIB"].includes(b.id) ? b.name : b.short}
+          </button>
+        </Html>
+      )}
     </group>
   );
 }
@@ -200,21 +162,14 @@ function IndoorBuilding({ building: b }: { building: Building }) {
     })[type] ?? "#939b86";
   return (
     <group>
-      <Block
-        position={[0, y - 0.4, 0]}
-        size={[b.size[0], 0.6, b.size[2]]}
-        color="#e4dccb"
-      />
-      <Block
-        position={[0, y, b.size[2] / 2]}
-        size={[b.size[0], 1, 0.3]}
-        color="#c2b59d"
-      />
-      <Block
-        position={[-b.size[0] / 2, y, 0]}
-        size={[0.3, 1, b.size[2]]}
-        color="#c2b59d"
-      />
+      <group position={[-b.position[0], 0, -b.position[2]]}>
+        <FootprintMesh
+          polygons={b.footprints}
+          height={0.6}
+          elevation={y - 0.6}
+          color="#e4dccb"
+        />
+      </group>
       {places.map((n) => {
         const p: Point = [
           n.position[0] - b.position[0],
@@ -343,23 +298,32 @@ function RouteLine() {
 function Camera({ command }: { command: { kind: string; id: number } }) {
   const controls = useRef<OrbitControlsType>(null);
   const { camera } = useThree();
-  const { focus } = useApp();
+  const { focus, mapView } = useApp();
   const target = useRef<Vector3 | null>(null);
   const destination = useRef<Vector3 | null>(null);
   useEffect(() => {
     if (focus) {
       target.current = new Vector3(...focus);
-      destination.current = new Vector3(
-        focus[0] + 50,
-        focus[1] + 62,
-        focus[2] + 65,
-      );
+      destination.current =
+        mapView === "top"
+          ? new Vector3(focus[0], 350, focus[2] + 0.01)
+          : new Vector3(focus[0] + 90, focus[1] + 140, focus[2] + 150);
     }
-  }, [focus]);
+  }, [focus, mapView]);
   useEffect(() => {
-    if (command.kind === "reset") {
-      target.current = new Vector3(-8, 0, 4);
-      destination.current = new Vector3(107, 117, 137);
+    if (command.kind === "reset" || command.kind === "top") {
+      target.current = new Vector3(-180, 0, 60);
+      destination.current =
+        command.kind === "top" || mapView === "top"
+          ? new Vector3(-180, 1500, 60.01)
+          : new Vector3(-180, 1000, 1000);
+      if (command.kind === "top" && controls.current) {
+        controls.current.target.copy(target.current);
+        camera.position.copy(destination.current);
+        controls.current.update();
+        target.current = null;
+        destination.current = null;
+      }
     } else if (command.kind === "in" || command.kind === "out") {
       const center = controls.current?.target ?? new Vector3();
       camera.position
@@ -383,10 +347,16 @@ function Camera({ command }: { command: { kind: string; id: number } }) {
   return (
     <OrbitControls
       ref={controls}
-      target={[-8, 0, 4]}
-      minDistance={25}
-      maxDistance={260}
+      target={[-180, 0, 60]}
+      minDistance={45}
+      maxDistance={2400}
       maxPolarAngle={Math.PI / 2.2}
+      enableRotate={mapView !== "top"}
+      mouseButtons={{
+        LEFT: mapView === "top" ? MOUSE.PAN : MOUSE.ROTATE,
+        MIDDLE: MOUSE.DOLLY,
+        RIGHT: MOUSE.PAN,
+      }}
       onStart={() => {
         target.current = null;
         destination.current = null;
@@ -397,188 +367,97 @@ function Camera({ command }: { command: { kind: string; id: number } }) {
 function Scene({ command }: { command: { kind: string; id: number } }) {
   return (
     <>
-      <color attach="background" args={["#e9ede4"]} />
-      <ambientLight intensity={1.6} />
+      <color attach="background" args={["#e8ede2"]} />
+      <ambientLight intensity={1.9} />
       <directionalLight
-        position={[-35, 90, 40]}
-        intensity={2.1}
+        position={[-300, 700, 300]}
+        intensity={1.6}
         castShadow
         shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-130}
-        shadow-camera-right={130}
-        shadow-camera-top={130}
-        shadow-camera-bottom={-130}
-        shadow-normalBias={0.08}
+        shadow-camera-left={-1050}
+        shadow-camera-right={1050}
+        shadow-camera-top={850}
+        shadow-camera-bottom={-850}
+        shadow-camera-far={2200}
+        shadow-normalBias={0.3}
       />
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[1000, 1000]} />
-        <meshStandardMaterial color="#e8ece2" />
+        <planeGeometry args={[6500, 6500]} />
+        <meshStandardMaterial color="#dce5cd" />
       </mesh>
-      <Block
-        position={[-12, 0.04, 0]}
-        size={[182, 0.07, 129]}
-        color="#dce3d1"
-      />
-      {[-57, -3, 65].map((x) => (
-        <Block
-          key={x}
-          position={[x, 0.1, 2]}
-          size={[6, 0.1, 134]}
-          color="#f2f0e7"
+      {campusGeometry.roads.map((road) => (
+        <FootprintMesh
+          key={road.id}
+          polygons={road.polygons as Footprint[]}
+          height={0.3}
+          elevation={0.05}
+          color="#fbfaf2"
+          wallColor="#fbfaf2"
         />
       ))}
-      {[-53, 29, 61].map((z) => (
-        <Block
-          key={z}
-          position={[-10, 0.1, z]}
-          size={[183, 0.1, 5]}
-          color="#f4f1e8"
+      <group position={[-440, 0.5, 65]} rotation={[0, -0.23, 0]}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[155, 92]} />
+          <meshStandardMaterial color="#b2c49a" />
+        </mesh>
+        <Line
+          points={Array.from(
+            { length: 65 },
+            (_, i) =>
+              [
+                Math.cos((i * Math.PI) / 32) * 89,
+                0.3,
+                Math.sin((i * Math.PI) / 32) * 58,
+              ] as Point,
+          )}
+          color="#cc9a85"
+          lineWidth={12}
         />
-      ))}
-      <Block position={[-19, 0.12, 19]} size={[89, 0.15, 11]} color="#eeede3" />
-      <Block
-        position={[-24, 0.14, -12]}
-        size={[28, 0.15, 24]}
-        color="#c1cfaa"
-      />
-      {[-20, -12, -4].map((z) => (
-        <Block
-          key={z}
-          position={[-24, 0.25, z]}
-          size={[28, 0.1, 1]}
-          color="#e5e5d4"
+        <Block position={[0, 0.4, 0]} size={[102, 0.1, 55]} color="#b4c69f" />
+        <Line
+          points={[
+            [-51, 0.6, -27],
+            [51, 0.6, -27],
+            [51, 0.6, 27],
+            [-51, 0.6, 27],
+            [-51, 0.6, -27],
+          ]}
+          color="#f4f3dc"
+          lineWidth={1}
         />
-      ))}
-      <Block position={[-24, 0.25, -12]} size={[1, 0.1, 24]} color="#e5e5d4" />
-      <Block position={[-65, 0.2, 38]} size={[25, 0.2, 18]} color="#c8d4b9" />
-      <Block position={[-65, 0.35, 38]} size={[15, 0.15, 9]} color="#a7bec0" />
+        <Line
+          points={[
+            [0, 0.6, -27],
+            [0, 0.6, 27],
+          ]}
+          color="#f4f3dc"
+          lineWidth={1}
+        />
+      </group>
       {trees.map((p, i) => (
-        <group key={i} position={p}>
-          <mesh position={[0, 1.4, 0]} castShadow>
-            <cylinderGeometry args={[0.25, 0.35, 2.8, 5]} />
-            <meshStandardMaterial color="#a2987c" />
-          </mesh>
-          <mesh position={[0, 3.1 + (i % 3) * 0.4, 0]} castShadow>
-            <icosahedronGeometry args={[2 + (i % 4) * 0.25, 1]} />
-            <meshStandardMaterial
-              color={["#a2b78b", "#bac99d", "#8fa881", "#c1cca8"][i % 4]}
-            />
-          </mesh>
-        </group>
-      ))}
-      {Array.from({ length: 12 }, (_, i) => (
-        <group key={i} position={[-53 + i * 9, 0, 32]}>
-          <mesh position={[0, 2.2, 0]} castShadow>
-            <icosahedronGeometry args={[1.5, 1]} />
-            <meshStandardMaterial color="#a5b993" />
-          </mesh>
-          <Block
-            position={[0, 0.7, 0]}
-            size={[0.3, 1.4, 0.3]}
-            color="#a69e83"
+        <mesh key={i} position={[p[0], 5, p[2]]} castShadow>
+          <icosahedronGeometry args={[5 + (i % 4), 0]} />
+          <meshStandardMaterial
+            color={["#a2b78b", "#b3c396", "#94ad85"][i % 3]}
           />
-        </group>
+        </mesh>
       ))}
       {buildings.map((b) => (
         <BuildingMesh key={b.id} building={b} />
       ))}
-      <Html position={[-23, 0.5, -12]} center zIndexRange={[3, 0]}>
-        <span className="place-label">AQ GARDENS</span>
-      </Html>
-      <Html position={[-7, 0.5, 36]} center zIndexRange={[3, 0]}>
-        <span className="place-label">CAMPUS WALK</span>
-      </Html>
+      {landscapeLabels.map((label) => (
+        <Html
+          key={label.name}
+          position={label.position}
+          center
+          zIndexRange={[3, 0]}
+        >
+          <span className="place-label">{label.name}</span>
+        </Html>
+      ))}
       <RouteLine />
       <Camera command={command} />
     </>
-  );
-}
-function FallbackMap() {
-  const s = useApp();
-  return (
-    <svg
-      className="two-d"
-      viewBox="-105 -85 205 170"
-      role="img"
-      aria-label="2D demonstration campus map"
-    >
-      <rect x="-105" y="-85" width="205" height="170" fill="#e4eadd" />
-      {[-53, 29, 61].map((z) => (
-        <path
-          key={z}
-          d={`M -100 ${z} H 100`}
-          stroke="#f8f5eb"
-          strokeWidth="6"
-        />
-      ))}
-      {trees.map(([x, , z], i) => (
-        <circle key={i} cx={x} cy={z} r="2.2" fill="#a7ba95" />
-      ))}
-      {buildings.map((b) => (
-        <g
-          key={b.id}
-          role="button"
-          tabIndex={0}
-          aria-label={`Explore ${b.name}`}
-          onClick={() => {
-            s.setSelected(b.id);
-            s.setFloor(1);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              s.setSelected(b.id);
-              s.setFloor(1);
-            }
-          }}
-        >
-          <rect
-            x={b.position[0] - b.size[0] / 2}
-            y={b.position[2] - b.size[2] / 2}
-            width={b.size[0]}
-            height={b.size[2]}
-            fill={s.selected === b.id ? "#d4b9af" : "#ccc8b8"}
-            stroke="#aaa995"
-            strokeWidth=".4"
-          />
-          <text
-            x={b.position[0]}
-            y={b.position[2]}
-            textAnchor="middle"
-            fontSize="3.2"
-            fill="#464d40"
-          >
-            {b.short}
-          </text>
-        </g>
-      ))}
-      {s.route && (
-        <polyline
-          points={s.route.nodes
-            .map((n) => `${n.position[0]},${n.position[2]}`)
-            .join(" ")}
-          fill="none"
-          stroke="#ba293e"
-          strokeWidth="1.2"
-        />
-      )}
-      {s.selected &&
-        nodes
-          .filter((n) => n.building === s.selected && n.floor === s.floor)
-          .map((n) => (
-            <g key={n.id}>
-              <circle
-                cx={n.position[0]}
-                cy={n.position[2]}
-                r="1"
-                fill="#bc293d"
-              />
-              <text x={n.position[0] + 1.8} y={n.position[2]} fontSize="2.1">
-                {n.room ?? n.type}
-              </text>
-            </g>
-          ))}
-    </svg>
   );
 }
 class SceneBoundary extends Component<
@@ -592,7 +471,7 @@ class SceneBoundary extends Component<
   render() {
     return this.state.failed ? (
       <>
-        <FallbackMap />
+        <CampusPlan />
         <div className="map-error">
           3D is unavailable. Showing the 2D campus map.
         </div>
@@ -612,37 +491,43 @@ function hasWebGL() {
 }
 export default function CampusScene() {
   const s = useApp();
-  const [view, setView] = useState<"3d" | "2d">(() =>
-      hasWebGL() ? "3d" : "2d",
-    ),
-    [legend, setLegend] = useState(false),
+  const view = s.mapView,
+    setView = s.setMapView;
+  useEffect(() => {
+    if (!hasWebGL() && (view === "3d" || view === "top")) setView("2d");
+  }, [view, setView]);
+  const [legend, setLegend] = useState(false),
     [command, setCommand] = useState({ kind: "reset", id: 0 });
   const selected = buildings.find((b) => b.id === s.selected);
   return (
     <>
       <SceneBoundary>
-        {view === "3d" ? (
+        {view === "google" ? (
+          <GoogleCampusMap />
+        ) : view === "3d" || view === "top" ? (
           <Canvas
             shadows
             dpr={[1, 1.5]}
             camera={{
-              position: [107, 117, 137],
+              position: [-180, 1000, 1000],
               fov: 39,
-              near: 0.1,
-              far: 1200,
+              near: 2,
+              far: 6500,
             }}
           >
             <Scene command={command} />
           </Canvas>
         ) : (
-          <FallbackMap />
+          <CampusPlan command={command} />
         )}
       </SceneBoundary>
-      <div className="compass">
-        <span>N</span>
-        <Compass size={32} strokeWidth={1.2} />
-      </div>
-      {selected && (
+      {view !== "google" && (
+        <div className="compass">
+          <span>N</span>
+          <Compass size={32} strokeWidth={1.2} />
+        </div>
+      )}
+      {selected && view !== "google" && (
         <div className="floor-panel">
           <div className="floor-heading">
             {selected.name}
@@ -675,50 +560,65 @@ export default function CampusScene() {
           </div>
         </div>
       )}
-      <div className="map-controls">
-        <div className="control-group">
-          <button
-            aria-label="Toggle legend"
-            className={legend ? "active" : ""}
-            onClick={() => setLegend(!legend)}
-          >
-            <Layers size={17} />
-          </button>
+      {view !== "google" && (
+        <div className="map-controls">
+          <div className="control-group">
+            <button
+              aria-label="Toggle legend"
+              className={legend ? "active" : ""}
+              onClick={() => setLegend(!legend)}
+            >
+              <Layers size={17} />
+            </button>
+          </div>
+          <div className="control-group">
+            <button
+              aria-label="Zoom in"
+
+              onClick={() => setCommand({ kind: "in", id: Date.now() })}
+            >
+              <Plus size={17} />
+            </button>
+            <button
+              aria-label="Zoom out"
+
+              onClick={() => setCommand({ kind: "out", id: Date.now() })}
+            >
+              <Minus size={17} />
+            </button>
+            <button
+              aria-label="Reset map view"
+              onClick={() => {
+                s.setSelected(null);
+                s.setFocus(null);
+                setCommand({ kind: "reset", id: Date.now() });
+              }}
+            >
+              <RotateCcw size={15} />
+            </button>
+          </div>
         </div>
-        <div className="control-group">
-          <button
-            aria-label="Zoom in"
-            disabled={view === "2d"}
-            onClick={() => setCommand({ kind: "in", id: Date.now() })}
-          >
-            <Plus size={17} />
-          </button>
-          <button
-            aria-label="Zoom out"
-            disabled={view === "2d"}
-            onClick={() => setCommand({ kind: "out", id: Date.now() })}
-          >
-            <Minus size={17} />
-          </button>
-          <button
-            aria-label="Reset map view"
-            onClick={() => {
-              s.setSelected(null);
-              s.setFocus(null);
-              setCommand({ kind: "reset", id: Date.now() });
-            }}
-          >
-            <RotateCcw size={15} />
-          </button>
-        </div>
-      </div>
+      )}
       <div className="view-switch">
         <button
           className={view === "3d" ? "active" : ""}
-          onClick={() => setView(hasWebGL() ? "3d" : "2d")}
+          onClick={() => {
+            setView(hasWebGL() ? "3d" : "2d");
+            setCommand({ kind: "reset", id: Date.now() });
+          }}
         >
           <Box size={13} />
           3D view
+        </button>
+        <button
+          className={view === "top" ? "active" : ""}
+          onClick={() => {
+            setView(hasWebGL() ? "top" : "2d");
+            setCommand({ kind: "top", id: Date.now() });
+          }}
+        >
+          <Compass size={13} />
+          Top down
         </button>
         <button
           className={view === "2d" ? "active" : ""}
@@ -727,8 +627,15 @@ export default function CampusScene() {
           <Map size={13} />
           2D map
         </button>
+        <button
+          className={view === "google" ? "active" : ""}
+          onClick={() => setView("google")}
+        >
+          <Map size={13} />
+          Google Maps
+        </button>
       </div>
-      {legend && (
+      {legend && view !== "google" && (
         <div className="legend">
           <div className="legend-title">MAKE YOURSELF AT HOME</div>
           <div className="legend-row">

@@ -3,8 +3,8 @@ import { provenance } from "./buildings";
 import { rooms } from "./rooms";
 const indoor: NavNode[] = ["AQ", "ASB"].flatMap((building) =>
   [1, 2, 3].flatMap((floor) => {
-    const x = building === "AQ" ? -39 : 23,
-      z = building === "AQ" ? -12 : 13,
+    const x = building === "AQ" ? 65 : 165,
+      z = building === "AQ" ? 0 : 145,
       y = 1 + (floor - 1) * 4;
     return [
       {
@@ -39,7 +39,7 @@ export const nodes: NavNode[] = [
     name: "Academic Quadrangle · Accessible entrance",
     building: "AQ",
     floor: 1,
-    position: [-15, 1, 9],
+    position: [65, 1, 35],
     type: "entrance",
     accessible: true,
     ...provenance,
@@ -49,7 +49,7 @@ export const nodes: NavNode[] = [
     name: "Applied Sciences · Accessible entrance",
     building: "ASB",
     floor: 1,
-    position: [17, 1, 13],
+    position: [180, 1, 130],
     type: "entrance",
     accessible: true,
     ...provenance,
@@ -59,7 +59,7 @@ export const nodes: NavNode[] = [
     name: "Demo campus plaza",
     building: "OUT",
     floor: 0,
-    position: [-6, 0.35, 24],
+    position: [95, 0.35, 65],
     type: "outdoor",
     accessible: true,
     ...provenance,
@@ -69,7 +69,7 @@ export const nodes: NavNode[] = [
     name: "Demo east walkway",
     building: "OUT",
     floor: 0,
-    position: [10, 0.35, 24],
+    position: [180, 0.35, 90],
     type: "outdoor",
     accessible: true,
     ...provenance,
@@ -79,7 +79,7 @@ export const nodes: NavNode[] = [
     name: "AQ · Demo accessible washroom",
     building: "AQ",
     floor: 1,
-    position: [-34, 1, -22],
+    position: [60, 1, -10],
     type: "washroom",
     accessible: true,
     ...provenance,

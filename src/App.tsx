@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { AppProvider, useApp } from "./store";
 import { findRoute } from "./routing/findRoute";
+import { buildings } from "./data/buildings";
 import { nodes } from "./data/nodes";
 import { edges } from "./data/edges";
 import RouteDirections from "./components/RouteDirections";
@@ -36,7 +37,13 @@ function Wayfinder() {
     <div className={`app ${dark ? "dark" : ""}`}>
       <header>
         <a className="brand" href="./">
-          <span className="sfu">SFU</span>
+          <img
+            className="sfu"
+            src="/sfu-logo.png"
+            alt="Simon Fraser University"
+            width="180"
+            height="91"
+          />
           <span className="brand-name">
             Campus Wayfinder<small>SIMON FRASER UNIVERSITY</small>
           </span>
@@ -121,7 +128,7 @@ function Wayfinder() {
                   className="location-link"
                   onClick={() =>
                     setNotice(
-                      "This demonstration is not georeferenced. Your current position cannot be matched to its map. Indoor location may be approximate.",
+                      "Building footprints are georeferenced, but classroom and entrance locations remain demonstrations. Indoor location may be approximate; choose a sample location to try routing.",
                     )
                   }
                 >
@@ -222,34 +229,49 @@ function Wayfinder() {
               </>
             ) : (
               <div className="explore-list">
-                {[
-                  [
-                    "AQ",
-                    "Academic Quadrangle",
-                    "Classrooms · Courtyard · 3 demo floors",
-                  ],
-                  [
-                    "ASB",
-                    "Applied Sciences Building",
-                    "Classrooms · Labs · 3 demo floors",
-                  ],
-                ].map(([id, name, desc]) => (
-                  <button
-                    className="sample-card"
-                    key={id}
-                    onClick={() => {
-                      s.setSelected(id);
-                      s.setFloor(1);
-                    }}
-                  >
-                    <Building2 size={22} />
-                    <span>
-                      <b>{name}</b>
-                      <small>{desc}</small>
-                    </span>
-                    <ArrowUpRight size={17} />
-                  </button>
-                ))}
+                {buildings
+                  .filter((b) =>
+                    [
+                      "AQ",
+                      "ASB",
+                      "LIB",
+                      "SUB",
+                      "MBC",
+                      "RCB",
+                      "WMC",
+                      "LDC",
+                      "SWH",
+                      "BLU",
+                      "SH",
+                      "SSB",
+                      "TASC1",
+                      "TASC2",
+                    ].includes(b.id),
+                  )
+                  .map(({ id, name, navigable }) => (
+                    <button
+                      className="sample-card"
+                      key={id}
+                      onClick={() => {
+                        s.setSelected(id);
+                        s.setFloor(1);
+                        s.setFocus([
+                          ...buildings.find((b) => b.id === id)!.position,
+                        ]);
+                      }}
+                    >
+                      <Building2 size={22} />
+                      <span>
+                        <b>{name}</b>
+                        <small>
+                          {navigable
+                            ? "SFU footprint · 3 demo floors"
+                            : "SFU building footprint · Outdoor context"}
+                        </small>
+                      </span>
+                      <ArrowUpRight size={17} />
+                    </button>
+                  ))}
                 <p className="intro">
                   Select a building on the map to explore its demonstration
                   floors.
@@ -270,22 +292,33 @@ function Wayfinder() {
             <div className="demo-note">
               <Info size={17} />
               <div>
-                <b>A preview of what’s possible</b>
+                <b>Real footprints. Demo routes.</b>
                 <p>
-                  This map uses illustrative buildings and sample rooms. It’s a
-                  demo, not a guide for real-world navigation.
+                  Building outlines come from SFU GIS. Heights, rooms, and
+                  routes are illustrative, not verified navigation.
                 </p>
               </div>
             </div>
           </div>
           <div className="sidebar-footer">
-            <span className="mini-sfu">SFU</span>Made for the journey.
+            <img
+              className="mini-sfu"
+              src="/sfu-logo.png"
+              alt="SFU"
+              width="180"
+              height="91"
+            />
+            Made for the journey.
             <span>
               Burnaby, BC <ArrowUpRight size={12} />
             </span>
           </div>
         </aside>
-        <section className="map" aria-label="Interactive campus map">
+        <section
+          className="map"
+          data-view={s.mapView}
+          aria-label="Interactive campus map"
+        >
           <Suspense
             fallback={<div className="map-loading">Getting campus ready…</div>}
           >
@@ -298,26 +331,32 @@ function Wayfinder() {
               </span>
               <span>
                 <b>Burnaby campus</b>
-                <small>Explore a little. Find your way.</small>
+                <small>SFU footprints · Approximate heights</small>
               </span>
             </div>
             <span className="live-badge">
               <span className="green-dot" />
-              CAMPUS DEMO
+              SFU GIS · 2024
             </span>
           </div>
           <div className="map-bottom">
             <span className="map-instruction">
-              Drag to rotate <i /> Scroll to zoom <i /> Click a building to
-              explore
+              {s.mapView === "2d" || s.mapView === "top"
+                ? "Drag to pan"
+                : "Drag to rotate"}{" "}
+              <i /> Scroll to zoom <i /> Click a building to explore
             </span>
-            <div className="scale">
-              <span />
-              20 demo units
-            </div>
+            <div className="scale">North-up in top view</div>
           </div>
           <div className="map-attribution">
-            ILLUSTRATIVE CAMPUS MODEL · NOT TO SCALE
+            <a
+              href="https://www.sfu.ca/fs/campus-maps.html"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              SFU FACILITIES GIS
+            </a>{" "}
+            · HEIGHTS & ROUTES APPROXIMATE
           </div>
         </section>
       </main>

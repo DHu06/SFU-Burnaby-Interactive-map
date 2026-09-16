@@ -79,13 +79,10 @@ header {
   align-items: center;
 }
 .sfu {
-  background: #bd293b;
-  color: #fff;
-  font-size: 30px;
-  font-weight: 850;
-  font-style: italic;
-  letter-spacing: -2px;
-  padding: 10px 13px;
+  display: block;
+  width: 96px;
+  height: auto;
+  flex-shrink: 0;
 }
 .brand-name {
   font-weight: 650;
@@ -460,10 +457,10 @@ h1 {
   align-items: center;
 }
 .mini-sfu {
-  font-style: italic;
-  font-weight: 900;
-  color: #a8aba8;
-  font-size: 16px;
+  display: block;
+  width: 32px;
+  height: auto;
+  flex-shrink: 0;
 }
 .sidebar-footer > span:last-child {
   margin-left: auto;
@@ -962,8 +959,7 @@ h1 {
     padding: 0 16px;
   }
   .sfu {
-    font-size: 24px;
-    padding: 8px 10px;
+    width: 72px;
   }
   .brand {
     gap: 10px;
@@ -1100,5 +1096,184 @@ h1 {
   * {
     scroll-behavior: auto !important;
     transition: none !important;
+  }
+}
+/* Keep the provider's controls and attribution unobscured in the embedded view. */
+.map[data-view="google"] > .map-top,
+.map[data-view="google"] > .map-bottom,
+.map[data-view="google"] > .map-attribution {
+  display: none;
+}
+.map[data-view="google"] .view-switch {
+  bottom: 15px;
+  left: 25px;
+}
+.google-map-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  padding-bottom: 70px;
+  color: var(--ink);
+}
+.google-toolbar {
+  min-height: 78px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 15px 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.google-toolbar > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.google-toolbar b {
+  font-size: 14px;
+  font-weight: 650;
+}
+.google-toolbar small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+.google-toolbar > a {
+  color: var(--muted);
+  padding: 8px;
+}
+.google-map-types {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.google-map-types button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+.google-map-types button.active {
+  background: #354839;
+  color: white;
+}
+.google-frame {
+  position: relative;
+  flex: 1;
+  min-height: 300px;
+  background: #e7eadd;
+}
+.google-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.google-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 25px;
+  text-align: center;
+  font-size: 12px;
+  color: #5e6e57;
+}
+.google-note {
+  padding: 12px 24px;
+  font-size: 10px;
+  line-height: 1.7;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+.google-note a {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #aa2a3b;
+  flex-shrink: 0;
+}
+.map-attribution a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: #5f6e55;
+}
+.compass svg {
+  transform: none;
+}
+.dark .map[data-view="google"] {
+  filter: none;
+}
+.dark .location-link,
+.dark .tabs button.selected,
+.dark .google-note a {
+  color: #f397a5;
+}
+@media (max-width: 1050px) {
+  .google-note {
+    display: block;
+  }
+  .google-note a {
+    margin-top: 5px;
+  }
+  .google-toolbar {
+    gap: 5px;
+    padding: 15px;
+  }
+  .google-map-types button {
+    padding: 8px;
+  }
+}
+@media (max-width: 760px) {
+  .view-switch {
+    left: 12px;
+    right: 12px;
+    bottom: 44px;
+    justify-content: center;
+  }
+  .view-switch button {
+    padding: 9px;
+    font-size: 10px;
+  }
+  .google-toolbar {
+    padding: 65px 12px 12px;
+    flex-wrap: wrap;
+  }
+  .google-toolbar small {
+    font-size: 9px;
+  }
+  .google-map-types button {
+    font-size: 10px;
+    padding: 8px 6px;
+  }
+  .google-note {
+    padding: 10px 14px;
+    font-size: 9px;
+  }
+  .google-map-view {
+    padding-bottom: 63px;
+  }
+  .map[data-view="google"] .view-switch {
+    left: 12px;
+    bottom: 12px;
+  }
+  .google-frame {
+    min-height: 220px;
+  }
+  .map-attribution {
+    font-size: 6px;
+    left: 12px;
+    right: auto;
   }
 }

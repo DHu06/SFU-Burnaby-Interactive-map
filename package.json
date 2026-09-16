@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "test": "vitest run src",
     "preview": "vite preview",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "import:campus": "node scripts/import-campus.mjs"
   },
   "dependencies": {
     "@react-three/drei": "10.7.7",
